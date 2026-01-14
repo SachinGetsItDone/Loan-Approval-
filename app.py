@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 
-Try to import plotly, use fallback if not available
+#Try to import plotly, use fallback if not available
 try:
 import plotly.graph_objects as go
 import plotly.express as px
@@ -12,9 +12,7 @@ except ImportError:
 PLOTLY_AVAILABLE = False
 st.warning("⚠️ Plotly not installed. Charts will use simplified visualizations.")
 
-=========================================
-Load the pre-trained pipeline
-=========================================
+
 @st.cache_resource
 def load_pipeline():
 """Load the pre-trained loan approval pipeline from pickle file"""
@@ -29,9 +27,7 @@ except Exception as e:
 st.error(f"Error loading pipeline: {str(e)}")
 st.stop()
 
-=========================================
-Feature Engineering
-=========================================
+
 def prepare_input(input_data, expected_columns):
 """Prepare input data with one-hot encoding to match training format"""
 
@@ -60,9 +56,7 @@ for col in expected_columns:
 
 processed_df = processed_df[expected_columns]
 return processed_df
-=========================================
-Prediction function
-=========================================
+
 def predict_loan_approval(pipeline, input_data):
 """Make prediction using the loaded pipeline"""
 try:
@@ -89,9 +83,7 @@ expected_columns = None
 except Exception as e:
     st.error(f"Prediction error: {str(e)}")
     return None, None
-=========================================
-Visualization Functions (Glass & Neon Theme)
-=========================================
+
 def create_gauge_chart(probability):
 """Create a neon gauge chart"""
 if not PLOTLY_AVAILABLE:
@@ -347,9 +339,7 @@ for factor, score in sorted(factors.items(), key=lambda x: x[1], reverse=True):
 
 html += "</div>"
 return html
-=========================================
-Streamlit UI
-=========================================
+
 def main():
 st.set_page_config(
 page_title="Loan Approval System",
@@ -1539,3 +1529,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
