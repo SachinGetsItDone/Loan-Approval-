@@ -578,7 +578,7 @@ def main():
         st.markdown("<h1>Loan Approval System</h1>", unsafe_allow_html=True)
         st.markdown("<p class='subtitle'>Credit decision platform</p>", unsafe_allow_html=True)
     with col_header2:
-        st.markdown("<div style='text-align: right; padding-top: 1.5rem;'><span class='status-badge' style='background: #d1fae5; color: #065f46;'>✓ Model Ready</span></div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align: right; padding-top: 1.5rem;'><span class='status-badge' style='background: #1f2937; color: white;'>✓ Model Ready</span></div>", unsafe_allow_html=True)
     
     # Load pipeline
     pipeline = load_pipeline()
