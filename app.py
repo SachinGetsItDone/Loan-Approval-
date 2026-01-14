@@ -53,7 +53,6 @@ with st.form("loan_form"):
 
 # ---------------- PREDICTION ----------------
 if submit:
-    # Raw input
     input_df = pd.DataFrame({
         "Age": [age],
         "Applicant_Income": [income],
@@ -67,7 +66,7 @@ if submit:
     })
 
     # Numerical scaling
-    num_cols = ["Age", "Applicant_Income", "Credit_Score", "DTI_Ratio", "Savings"]
+    num_cols = list(scaler.feature_names_in_)
     scaled_num = scaler.transform(input_df[num_cols])
     scaled_df = pd.DataFrame(scaled_num, columns=num_cols)
 
@@ -81,11 +80,8 @@ if submit:
 
     # Final input
     final_input = pd.concat([scaled_df, encoded_df], axis=1)
-
-    # 🔑 MATCH TRAINING FEATURES
     final_input = final_input.reindex(columns=features, fill_value=0)
 
-    # Prediction
     prediction = model.predict(final_input)[0]
     probability = model.predict_proba(final_input)[0][1]
 
@@ -95,3 +91,4 @@ if submit:
         st.success(f"✅ Loan Approved (Confidence: {probability:.2%})")
     else:
         st.error(f"❌ Loan Rejected (Confidence: {1 - probability:.2%})")
+
