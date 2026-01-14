@@ -74,6 +74,7 @@ with st.form("loan_form"):
 # ---------------- PREDICTION ----------------
 if submit:
     input_df = pd.DataFrame({
+        "Applicant_ID": [1],   # 👈 REQUIRED by pipeline (dummy value)
         "Applicant_Income": [applicant_income],
         "Coapplicant_Income": [coapplicant_income],
         "Age": [age],
@@ -103,3 +104,4 @@ if submit:
         st.success(f"✅ Loan Approved\n\n**Confidence:** {probability:.2%}")
     else:
         st.error(f"❌ Loan Rejected\n\n**Confidence:** {(1 - probability):.2%}")
+
