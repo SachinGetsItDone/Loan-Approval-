@@ -81,6 +81,7 @@ The model shows good recall, making it effective at identifying approved loan ap
 - Seaborn
 - Scikit-learn
 - Jupyter Notebook
+- streamlit
 
 ---
 
