@@ -22,14 +22,76 @@ def load_pipeline():
         st.stop()
 
 # =========================================
+# Feature Engineering
+# =========================================
+
+def prepare_input(input_data, expected_columns):
+    """Prepare input data with one-hot encoding to match training format"""
+    
+    # Create base DataFrame
+    input_df = pd.DataFrame([input_data])
+    
+    # Separate numeric and categorical features
+    numeric_features = [
+        "Applicant_ID", "Applicant_Income", "Coapplicant_Income",
+        "Age", "Dependents", "Credit_Score", "Existing_Loans",
+        "DTI_Ratio", "Savings", "Collateral_Value", "Loan_Amount", "Loan_Term"
+    ]
+    
+    categorical_features = [
+        "Employment_Status", "Marital_Status", "Loan_Purpose",
+        "Property_Area", "Education_Level", "Gender", "Employer_Category"
+    ]
+    
+    # Extract numeric features
+    numeric_df = input_df[numeric_features].copy()
+    
+    # One-hot encode categorical features
+    categorical_df = input_df[categorical_features].copy()
+    categorical_encoded = pd.get_dummies(categorical_df, drop_first=False)
+    
+    # Combine numeric and encoded categorical
+    processed_df = pd.concat([numeric_df, categorical_encoded], axis=1)
+    
+    # Ensure all expected columns are present (add missing ones with 0)
+    for col in expected_columns:
+        if col not in processed_df.columns:
+            processed_df[col] = 0
+    
+    # Keep only expected columns in the correct order
+    processed_df = processed_df[expected_columns]
+    
+    return processed_df
+
+# =========================================
 # Prediction function
 # =========================================
 
 def predict_loan_approval(pipeline, input_data):
     """Make prediction using the loaded pipeline"""
     try:
-        # Convert input to DataFrame
-        input_df = pd.DataFrame([input_data])
+        # Get expected feature names from the pipeline
+        if hasattr(pipeline, 'feature_names_in_'):
+            expected_columns = pipeline.feature_names_in_.tolist()
+        elif hasattr(pipeline, 'get_feature_names_out'):
+            expected_columns = pipeline.get_feature_names_out().tolist()
+        else:
+            # Try to extract from the model within the pipeline
+            if hasattr(pipeline, 'named_steps'):
+                model = pipeline.named_steps.get('model') or pipeline.named_steps.get('classifier')
+                if model and hasattr(model, 'feature_names_in_'):
+                    expected_columns = model.feature_names_in_.tolist()
+                else:
+                    expected_columns = None
+            else:
+                expected_columns = None
+        
+        # Prepare input with proper encoding
+        if expected_columns:
+            input_df = prepare_input(input_data, expected_columns)
+        else:
+            # Fallback: create DataFrame and let pipeline handle it
+            input_df = pd.DataFrame([input_data])
         
         # Make prediction
         prediction = pipeline.predict(input_df)
@@ -78,8 +140,8 @@ def main():
         education_level = st.selectbox("Education Level", ["Graduate", "Not Graduate"])
         
         st.subheader("Employment Information")
-        employment_status = st.selectbox("Employment Status", ["Salaried", "Self-employed"])
-        employer_category = st.selectbox("Employer Category", ["Private", "Government"])
+        employment_status = st.selectbox("Employment Status", ["Salaried", "Self-employed", "Unemployed"])
+        employer_category = st.selectbox("Employer Category", ["Private", "Government", "MNC", "Unemployed"])
         applicant_income = st.number_input("Applicant Income ($)", min_value=0.0, value=5000.0, step=100.0)
         coapplicant_income = st.number_input("Co-applicant Income ($)", min_value=0.0, value=0.0, step=100.0)
     
