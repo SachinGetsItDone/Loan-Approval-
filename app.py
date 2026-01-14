@@ -2,8 +2,15 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-import plotly.graph_objects as go
-import plotly.express as px
+
+# Try to import plotly, use fallback if not available
+try:
+    import plotly.graph_objects as go
+    import plotly.express as px
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    st.warning("⚠️ Plotly not installed. Charts will use simplified visualizations. Install with: pip install plotly")
 
 # =========================================
 # Load the pre-trained pipeline
@@ -115,6 +122,9 @@ def predict_loan_approval(pipeline, input_data):
 
 def create_gauge_chart(probability):
     """Create a gauge chart for approval probability"""
+    if not PLOTLY_AVAILABLE:
+        return None
+        
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=probability * 100,
@@ -148,8 +158,46 @@ def create_gauge_chart(probability):
     
     return fig
 
+def create_simple_gauge(probability):
+    """Create a simple text-based gauge when Plotly is not available"""
+    prob_percentage = probability * 100
+    
+    # Create a simple progress visualization
+    filled = int(prob_percentage / 5)  # 20 segments
+    empty = 20 - filled
+    bar = "█" * filled + "░" * empty
+    
+    if prob_percentage >= 70:
+        color = "#22c55e"
+        status = "✓ APPROVED"
+    elif prob_percentage >= 55:
+        color = "#f59e0b"
+        status = "⚠ BORDERLINE"
+    else:
+        color = "#ef4444"
+        status = "✗ HIGH RISK"
+    
+    return f"""
+    <div style='text-align: center; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e5e7eb;'>
+        <div style='font-size: 3rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;'>
+            {prob_percentage:.1f}%
+        </div>
+        <div style='font-size: 1.2rem; color: {color}; font-weight: 600; margin-bottom: 1rem;'>
+            {status}
+        </div>
+        <div style='font-family: monospace; font-size: 1.5rem; letter-spacing: 2px; color: {color};'>
+            {bar}
+        </div>
+        <div style='margin-top: 1rem; color: #6b7280; font-size: 0.875rem;'>
+            Threshold: 70%
+        </div>
+    </div>
+    """
+
 def create_risk_breakdown_chart(prob_percentage):
     """Create a horizontal bar chart showing risk breakdown"""
+    if not PLOTLY_AVAILABLE:
+        return None
     
     categories = ['High Risk<br><55%', 'Borderline<br>55-69%', 'Approved<br>≥70%']
     values = [55, 15, 30]  # Width of each zone
@@ -204,8 +252,52 @@ def create_risk_breakdown_chart(prob_percentage):
     
     return fig
 
+def create_simple_risk_bar(prob_percentage):
+    """Create a simple risk bar when Plotly is not available"""
+    
+    # Determine position
+    if prob_percentage < 55:
+        zone = "HIGH RISK"
+        zone_color = "#ef4444"
+    elif prob_percentage < 70:
+        zone = "BORDERLINE"
+        zone_color = "#f59e0b"
+    else:
+        zone = "APPROVED"
+        zone_color = "#22c55e"
+    
+    return f"""
+    <div style='background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #e5e7eb;'>
+        <div style='font-weight: 600; margin-bottom: 1rem; color: #1f2937;'>Risk Assessment Scale</div>
+        <div style='display: flex; height: 40px; border-radius: 8px; overflow: hidden; margin-bottom: 1rem;'>
+            <div style='flex: 55; background: #fecaca; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #991b1b;'>
+                &lt;55% High Risk
+            </div>
+            <div style='flex: 15; background: #fde68a; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #92400e;'>
+                55-69%
+            </div>
+            <div style='flex: 30; background: #a7f3d0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #065f46;'>
+                ≥70% Approved
+            </div>
+        </div>
+        <div style='position: relative; height: 30px; background: #f3f4f6; border-radius: 8px;'>
+            <div style='position: absolute; left: {prob_percentage}%; transform: translateX(-50%); top: -5px;'>
+                <div style='background: {zone_color}; color: white; padding: 0.25rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem; white-space: nowrap;'>
+                    {prob_percentage:.1f}%
+                </div>
+                <div style='width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid {zone_color}; margin: 0 auto;'></div>
+            </div>
+        </div>
+        <div style='text-align: center; margin-top: 1.5rem; color: {zone_color}; font-weight: 600;'>
+            {zone}
+        </div>
+    </div>
+    """
+
 def create_feature_importance_chart(input_data):
     """Create a bar chart showing key factors"""
+    if not PLOTLY_AVAILABLE:
+        return None
     
     # Calculate normalized scores for key factors
     factors = {
@@ -250,6 +342,44 @@ def create_feature_importance_chart(input_data):
     )
     
     return fig
+
+def create_simple_factors(input_data):
+    """Create simple factor display when Plotly is not available"""
+    
+    # Calculate normalized scores
+    factors = {
+        'Credit Score': min(input_data['Credit_Score'] / 850 * 100, 100),
+        'Income': min((input_data['Applicant_Income'] + input_data['Coapplicant_Income']) / 200 * 100, 100) if input_data['Applicant_Income'] > 0 else 0,
+        'DTI Ratio': (1 - input_data['DTI_Ratio']) * 100,
+        'Savings': min(input_data['Savings'] / 500 * 100, 100) if input_data['Savings'] > 0 else 0,
+        'Collateral': min(input_data['Collateral_Value'] / 1000 * 100, 100) if input_data['Collateral_Value'] > 0 else 0,
+    }
+    
+    html = "<div style='background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #e5e7eb;'>"
+    html += "<div style='font-weight: 600; margin-bottom: 1rem; color: #1f2937;'>Key Factors Analysis</div>"
+    
+    for factor, score in sorted(factors.items(), key=lambda x: x[1], reverse=True):
+        if score >= 70:
+            color = "#3b82f6"
+        elif score >= 50:
+            color = "#f59e0b"
+        else:
+            color = "#ef4444"
+        
+        html += f"""
+        <div style='margin-bottom: 0.75rem;'>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 0.25rem;'>
+                <span style='font-size: 0.875rem; color: #1f2937;'>{factor}</span>
+                <span style='font-size: 0.875rem; font-weight: 600; color: {color};'>{score:.0f}%</span>
+            </div>
+            <div style='height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden;'>
+                <div style='height: 100%; background: {color}; width: {score}%; transition: width 0.3s ease;'></div>
+            </div>
+        </div>
+        """
+    
+    html += "</div>"
+    return html
 
 # =========================================
 # Streamlit UI
@@ -594,27 +724,39 @@ def main():
                     chart_col1, chart_col2 = st.columns(2, gap="medium")
                     
                     with chart_col1:
-                        st.markdown("<div class='card'>", unsafe_allow_html=True)
-                        st.markdown("**Approval Confidence**")
-                        gauge_fig = create_gauge_chart(prob_approved)
-                        st.plotly_chart(gauge_fig, use_container_width=True, config={'displayModeBar': False})
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        if PLOTLY_AVAILABLE:
+                            st.markdown("<div class='card'>", unsafe_allow_html=True)
+                            st.markdown("**Approval Confidence**")
+                            gauge_fig = create_gauge_chart(prob_approved)
+                            st.plotly_chart(gauge_fig, use_container_width=True, config={'displayModeBar': False})
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        else:
+                            simple_gauge = create_simple_gauge(prob_approved)
+                            st.markdown(simple_gauge, unsafe_allow_html=True)
                     
                     with chart_col2:
-                        st.markdown("<div class='card'>", unsafe_allow_html=True)
-                        st.markdown("**Key Factors Analysis**")
-                        factors_fig = create_feature_importance_chart(input_data)
-                        st.plotly_chart(factors_fig, use_container_width=True, config={'displayModeBar': False})
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        if PLOTLY_AVAILABLE:
+                            st.markdown("<div class='card'>", unsafe_allow_html=True)
+                            st.markdown("**Key Factors Analysis**")
+                            factors_fig = create_feature_importance_chart(input_data)
+                            st.plotly_chart(factors_fig, use_container_width=True, config={'displayModeBar': False})
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        else:
+                            simple_factors = create_simple_factors(input_data)
+                            st.markdown(simple_factors, unsafe_allow_html=True)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     # Risk position chart
-                    st.markdown("<div class='card'>", unsafe_allow_html=True)
-                    st.markdown("**Risk Assessment Scale**")
-                    risk_fig = create_risk_breakdown_chart(prob_percentage)
-                    st.plotly_chart(risk_fig, use_container_width=True, config={'displayModeBar': False})
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    if PLOTLY_AVAILABLE:
+                        st.markdown("<div class='card'>", unsafe_allow_html=True)
+                        st.markdown("**Risk Assessment Scale**")
+                        risk_fig = create_risk_breakdown_chart(prob_percentage)
+                        st.plotly_chart(risk_fig, use_container_width=True, config={'displayModeBar': False})
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        simple_risk = create_simple_risk_bar(prob_percentage)
+                        st.markdown(simple_risk, unsafe_allow_html=True)
     
     with tab2:
         info_col1, info_col2 = st.columns(2, gap="medium")
