@@ -192,24 +192,56 @@ def main():
                 st.markdown("---")
                 st.subheader("Prediction Result")
                 
-                # Display result with color coding
-                if prediction == 1 or prediction == "Yes":
-                    st.success("✅ **Loan Approved!**")
-                    result_color = "green"
-                else:
-                    st.error("❌ **Loan Not Approved**")
-                    result_color = "red"
-                
                 # Display probability if available
                 if probability is not None:
                     prob_approved = probability[1] if len(probability) > 1 else probability[0]
-                    st.metric(
-                        label="Approval Probability", 
-                        value=f"{prob_approved:.1%}"
-                    )
+                    prob_percentage = prob_approved * 100
                     
-                    # Progress bar for visual representation
+                    # Display result with color coding and threshold context
+                    if prediction == 1 or prediction == "Yes":
+                        st.success("✅ **Loan Approved!**")
+                        st.info(f"🎯 Confidence: {prob_percentage:.1f}% (Threshold: 70%)")
+                    else:
+                        st.error("❌ **Loan Not Approved**")
+                        if prob_percentage >= 55:
+                            st.warning(f"⚠️ Borderline Case: {prob_percentage:.1f}% confidence (Needs 70% to approve)")
+                        else:
+                            st.info(f"📊 Confidence: {prob_percentage:.1f}% (Threshold: 70%)")
+                    
+                    # Visual probability display
+                    col_prob1, col_prob2 = st.columns(2)
+                    
+                    with col_prob1:
+                        st.metric(
+                            label="Approval Probability", 
+                            value=f"{prob_percentage:.1f}%",
+                            delta=f"{prob_percentage - 70:.1f}% from threshold" if prob_percentage < 70 else "Above threshold ✓"
+                        )
+                    
+                    with col_prob2:
+                        # Risk category
+                        if prob_percentage >= 75:
+                            risk_level = "🟢 Good Applicant"
+                        elif prob_percentage >= 55:
+                            risk_level = "🟡 Borderline"
+                        else:
+                            risk_level = "🔴 High Risk"
+                        
+                        st.metric(
+                            label="Risk Category",
+                            value=risk_level
+                        )
+                    
+                    # Progress bar with threshold marker
                     st.progress(float(prob_approved))
+                    st.caption(f"Decision Threshold: 70% | Current: {prob_percentage:.1f}%")
+                
+                else:
+                    # Fallback if probability not available
+                    if prediction == 1 or prediction == "Yes":
+                        st.success("✅ **Loan Approved!**")
+                    else:
+                        st.error("❌ **Loan Not Approved**")
                 
                 # Show input summary
                 with st.expander("📋 View Application Summary"):
