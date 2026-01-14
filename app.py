@@ -1,107 +1,201 @@
 import streamlit as st
 import pandas as pd
-import pickle
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
-# ---------------- LOAD PIPELINE ----------------
+# =========================================
+# Data loading (replicates notebook context)
+# =========================================
+
+@st.cache_data
+def load_data():
+    columns = [
+        "Applicant_ID",
+        "Applicant_Income",
+        "Coapplicant_Income",
+        "Employment_Status",
+        "Age",
+        "Marital_Status",
+        "Dependents",
+        "Credit_Score",
+        "Existing_Loans",
+        "DTI_Ratio",
+        "Savings",
+        "Collateral_Value",
+        "Loan_Amount",
+        "Loan_Term",
+        "Loan_Purpose",
+        "Property_Area",
+        "Education_Level",
+        "Gender",
+        "Employer_Category",
+        "Loan_Approved",
+    ]
+
+    data = [
+        [1.0, 17795.0, 1387.0, "Salaried", 51.0, "Married", 0.0, 637.0, 4.0, 0.53, 19403.0, 45638.0, 16619.0, 84.0,
+         "Personal", "Urban", "Not Graduate", "Female", "Private", "No"],
+        [2.0, 2860.0, 2679.0, "Salaried", 46.0, "Married", 3.0, 621.0, 2.0, 0.30, 2580.0, 49272.0, 38687.0, np.nan,
+         "Car", "Semiurban", "Graduate", np.nan, "Private", "No"],
+        [3.0, 7390.0, 2106.0, "Salaried", 25.0, "Single", 2.0, 674.0, 4.0, 0.20, 13844.0, 6908.0, 27943.0, 72.0,
+         np.nan, "Urban", np.nan, "Female", "Government", "Yes"],
+        [4.0, 13964.0, 8173.0, "Salaried", 40.0, "Married", 2.0, 579.0, 3.0, 0.31, 9553.0, 10844.0, 27819.0, 60.0,
+         "Business", "Rural", "Graduate", "Female", "Government", "No"],
+        [5.0, 13284.0, 4223.0, "Self-employed", 31.0, "Single", 2.0, 721.0, 1.0, 0.29, 9386.0, 37629.0, 12741.0, 72.0,
+         "Car", np.nan, "Graduate", "Male", "Private", "Yes"],
+    ]
+
+    return pd.DataFrame(data, columns=columns)
+
+
+# =========================================
+# Training pipeline (replicated)
+# =========================================
+
 @st.cache_resource
-def load_pipeline():
-    return pickle.load(open("loan_pipeline.pkl", "rb"))
+def train_final_model():
+    df = load_data()
 
-pipeline = load_pipeline()
+    target_col = "Loan_Approved"
+    X = df.drop(columns=[target_col])
+    y = df[target_col].map({"Yes": 1, "No": 0})
 
-# ---------------- PAGE CONFIG ----------------
-st.set_page_config(
-    page_title="Loan Approval Prediction",
-    page_icon="🏦",
-    layout="centered"
-)
+    numeric_features = [
+        "Applicant_ID",
+        "Applicant_Income",
+        "Coapplicant_Income",
+        "Age",
+        "Dependents",
+        "Credit_Score",
+        "Existing_Loans",
+        "DTI_Ratio",
+        "Savings",
+        "Collateral_Value",
+        "Loan_Amount",
+        "Loan_Term",
+    ]
 
-# ---------------- TITLE ----------------
-st.title("🏦 Loan Approval Prediction")
-st.markdown("Predict whether a loan will be **Approved or Rejected** using Machine Learning.")
-st.divider()
+    categorical_features = [
+        "Employment_Status",
+        "Marital_Status",
+        "Loan_Purpose",
+        "Property_Area",
+        "Education_Level",
+        "Gender",
+        "Employer_Category",
+    ]
 
-# ---------------- INPUT FORM ----------------
-with st.form("loan_form"):
-    st.subheader("Applicant Financial Details")
+    X_num = X[numeric_features].copy()
+    for col in numeric_features:
+        X_num[col].fillna(X_num[col].median(), inplace=True)
 
-    col1, col2 = st.columns(2)
+    X_cat = X[categorical_features].copy()
+    for col in categorical_features:
+        X_cat[col].fillna(X_cat[col].mode(dropna=True)[0], inplace=True)
 
-    with col1:
-        applicant_income = st.number_input("Applicant Income", min_value=0, value=60000)
-        coapplicant_income = st.number_input("Coapplicant Income", min_value=0, value=10000)
-        savings = st.number_input("Savings", min_value=0, value=200000)
-        collateral = st.number_input("Collateral Value", min_value=0, value=300000)
-        loan_amount = st.number_input("Loan Amount", min_value=0, value=150000)
+    X_cat_dummies = pd.get_dummies(X_cat, drop_first=False)
+    X_processed = pd.concat([X_num, X_cat_dummies], axis=1)
 
-    with col2:
-        credit_score = st.number_input("Credit Score", 300, 900, 750)
-        dti = st.slider("DTI Ratio", 0.0, 1.0, 0.25)
-        existing_loans = st.number_input("Existing Loans", 0, 10, 1)
-        loan_term = st.number_input("Loan Term (months)", 6, 360, 60)
-        dependents = st.number_input("Dependents", 0, 10, 1)
+    scaler = StandardScaler()
+    X_processed[numeric_features] = scaler.fit_transform(X_processed[numeric_features])
 
-    st.subheader("Personal & Employment Information")
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X_processed, y)
 
-    col3, col4 = st.columns(2)
+    categories = {col: sorted(df[col].dropna().unique()) for col in categorical_features}
 
-    with col3:
-        age = st.number_input("Age", 18, 100, 30)
-        gender = st.selectbox("Gender", ["Male", "Female"])
-        marital_status = st.selectbox("Marital Status", ["Single", "Married"])
-        education = st.selectbox("Education Level", ["Graduate", "Not Graduate"])
+    return {
+        "model": model,
+        "scaler": scaler,
+        "numeric_features": numeric_features,
+        "categorical_features": categorical_features,
+        "all_columns": X_processed.columns.tolist(),
+        "categories": categories,
+    }
 
-    with col4:
-        employment_status = st.selectbox(
-            "Employment Status",
-            ["Salaried", "Self-employed", "Unemployed"]
-        )
-        employer_category = st.selectbox(
-            "Employer Category",
-            ["Private", "Government", "MNC", "Unemployed"]
-        )
-        loan_purpose = st.selectbox(
-            "Loan Purpose",
-            ["Home", "Car", "Education", "Personal", "Business"]
-        )
-        property_area = st.selectbox(
-            "Property Area",
-            ["Urban", "Semiurban", "Rural"]
-        )
 
-    submit = st.form_submit_button("🔍 Predict Loan Approval")
+# =========================================
+# Prediction helpers
+# =========================================
 
-# ---------------- PREDICTION ----------------
-if submit:
+def preprocess_input(user_df, pipeline):
+    X_num = user_df[pipeline["numeric_features"]].copy()
+    X_cat = user_df[pipeline["categorical_features"]].copy()
+
+    X_cat = pd.get_dummies(X_cat, drop_first=False)
+    X = pd.concat([X_num, X_cat], axis=1)
+    X = X.reindex(columns=pipeline["all_columns"], fill_value=0)
+    X[pipeline["numeric_features"]] = pipeline["scaler"].transform(
+        X[pipeline["numeric_features"]]
+    )
+    return X
+
+
+def predict_approval(user_df, pipeline):
+    X = preprocess_input(user_df, pipeline)
+    pred = pipeline["model"].predict(X)
+    return "Approved" if pred[0] == 1 else "Not Approved"
+
+
+# =========================================
+# Streamlit UI
+# =========================================
+
+def main():
+    st.title("Loan Approval Prediction")
+    pipeline = train_final_model()
+
+    applicant_id = st.number_input("Applicant_ID", value=1.0, step=1.0)
+    applicant_income = st.number_input("Applicant_Income", value=5000.0)
+    coapplicant_income = st.number_input("Coapplicant_Income", value=0.0)
+    age = st.number_input("Age", value=30.0)
+    dependents = st.number_input("Dependents", value=0.0)
+    credit_score = st.number_input("Credit_Score", value=650.0)
+    existing_loans = st.number_input("Existing_Loans", value=0.0)
+    dti_ratio = st.number_input("DTI_Ratio", value=0.3)
+    savings = st.number_input("Savings", value=10000.0)
+    collateral_value = st.number_input("Collateral_Value", value=20000.0)
+    loan_amount = st.number_input("Loan_Amount", value=10000.0)
+    loan_term = st.number_input("Loan_Term", value=36.0)
+
+    cats = pipeline["categories"]
+
+    employment_status = st.selectbox("Employment_Status", cats["Employment_Status"])
+    marital_status = st.selectbox("Marital_Status", cats["Marital_Status"])
+    loan_purpose = st.selectbox("Loan_Purpose", cats["Loan_Purpose"])
+    property_area = st.selectbox("Property_Area", cats["Property_Area"])
+    education_level = st.selectbox("Education_Level", cats["Education_Level"])
+    gender = st.selectbox("Gender", cats["Gender"])
+    employer_category = st.selectbox("Employer_Category", cats["Employer_Category"])
+
     input_df = pd.DataFrame({
-        "Applicant_ID": [1],   # 👈 REQUIRED by pipeline (dummy value)
+        "Applicant_ID": [applicant_id],
         "Applicant_Income": [applicant_income],
         "Coapplicant_Income": [coapplicant_income],
+        "Employment_Status": [employment_status],
         "Age": [age],
+        "Marital_Status": [marital_status],
         "Dependents": [dependents],
         "Credit_Score": [credit_score],
         "Existing_Loans": [existing_loans],
-        "DTI_Ratio": [dti],
+        "DTI_Ratio": [dti_ratio],
         "Savings": [savings],
-        "Collateral_Value": [collateral],
+        "Collateral_Value": [collateral_value],
         "Loan_Amount": [loan_amount],
         "Loan_Term": [loan_term],
-        "Employment_Status": [employment_status],
-        "Marital_Status": [marital_status],
         "Loan_Purpose": [loan_purpose],
         "Property_Area": [property_area],
-        "Education_Level": [education],
+        "Education_Level": [education_level],
         "Gender": [gender],
-        "Employer_Category": [employer_category]
+        "Employer_Category": [employer_category],
     })
 
-    prediction = pipeline.predict(input_df)[0]
-    probability = pipeline.predict_proba(input_df)[0][1]
+    if st.button("Predict Loan Approval"):
+        result = predict_approval(input_df, pipeline)
+        st.success(f"Loan Status: {result}")
 
-    st.divider()
 
-    if prediction == 1:
-        st.success(f"✅ Loan Approved\n\n**Confidence:** {probability:.2%}")
-    else:
-        st.error(f"❌ Loan Rejected\n\n**Confidence:** {(1 - probability):.2%}")
-
+if __name__ == "__main__":
+    main()
