@@ -198,13 +198,14 @@ def main():
                     prob_percentage = prob_approved * 100
                     
                     # Display result with color coding and threshold context
-                    if prediction == 1 or prediction == "Yes":
+                    # Loan approved if probability >= 70%
+                    if prob_percentage >= 70:
                         st.success("✅ **Loan Approved!**")
                         st.info(f"🎯 Confidence: {prob_percentage:.1f}% (Threshold: 70%)")
                     else:
                         st.error("❌ **Loan Not Approved**")
                         if prob_percentage >= 55:
-                            st.warning(f"⚠️ Borderline Case: {prob_percentage:.1f}% confidence (Needs 70% to approve)")
+                            st.warning(f"⚠️ Borderline Case: {prob_percentage:.1f}% confidence (Needs ≥70% to approve)")
                         else:
                             st.info(f"📊 Confidence: {prob_percentage:.1f}% (Threshold: 70%)")
                     
