@@ -371,7 +371,7 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Glassmorphism CSS
+    # Custom CSS for glass-like aesthetic and footer
     st.markdown("""
         <style>
         /* Fonts */
@@ -528,7 +528,7 @@ def main():
             box-shadow: 0 0 40px rgba(255, 65, 108, 0.2);
         }
         
-        /* Signature Label */
+        /* Signature Label (Footer) */
         .chef-label {
             text-align: center;
             margin-top: 3rem;
@@ -766,7 +766,7 @@ def main():
         """)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # The Specific Label Request
+    # Footer label 'cooked by chef sachin'
     st.markdown("""
         <div class='chef-label'>
             COOKED BY <span>CHEF SACHIN</span>
