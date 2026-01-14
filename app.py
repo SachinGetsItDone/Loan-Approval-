@@ -18,9 +18,6 @@ except ImportError:
 COLOR_NEON_GREEN = "#00f260"
 COLOR_NEON_ORANGE = "#f7971e"
 COLOR_NEON_RED = "#ff416c"
-COLOR_BG_DARK = "#0f0c29"
-COLOR_BG_MID = "#302b63"
-COLOR_BG_LIGHT = "#24243e"
 
 # =========================================
 # Load the pre-trained pipeline
@@ -116,13 +113,13 @@ def create_gauge_chart(probability):
     # Determine color based on probability
     if probability >= 0.70:
         bar_color = COLOR_NEON_GREEN
-        step_colors = ["rgba(255, 65, 108, 0.1)", "rgba(247, 151, 30, 0.1)", "rgba(0, 242, 96, 0.1)"]
+        step_colors = ["#2c0a0a", "#1a2e0a", "#0a2e0a"]
     elif probability >= 0.55:
         bar_color = COLOR_NEON_ORANGE
-        step_colors = ["rgba(255, 65, 108, 0.1)", "rgba(247, 151, 30, 0.1)", "rgba(0, 242, 96, 0.1)"]
+        step_colors = ["#2c0a0a", "#2e1a0a", "#0a2e0a"]
     else:
         bar_color = COLOR_NEON_RED
-        step_colors = ["rgba(255, 65, 108, 0.1)", "rgba(247, 151, 30, 0.1)", "rgba(0, 242, 96, 0.1)"]
+        step_colors = ["#2e0a0a", "#2e1a0a", "#0a2e0a"]
         
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -135,9 +132,9 @@ def create_gauge_chart(probability):
             'bgcolor': "rgba(0,0,0,0)",
             'borderwidth': 0,
             'steps': [
-                {'range': [0, 55], 'color': step_colors[0]},
-                {'range': [55, 70], 'color': step_colors[1]},
-                {'range': [70, 100], 'color': step_colors[2]}
+                {'range': [0, 55], 'color': 'rgba(255, 65, 108, 0.1)'},
+                {'range': [55, 70], 'color': 'rgba(247, 151, 30, 0.1)'},
+                {'range': [70, 100], 'color': 'rgba(0, 242, 96, 0.1)'}
             ],
             'threshold': {
                 'line': {'color': "white", 'width': 2},
@@ -174,7 +171,7 @@ def create_simple_gauge(probability):
         status = "✗ HIGH RISK"
     
     return f"""
-    <div style='text-align: center; padding: 2rem; background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>
+    <div style='text-align: center; padding: 2rem; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>
         <div style='font-size: 3rem; font-weight: 700; color: white; margin-bottom: 0.5rem; text-shadow: 0 0 10px rgba(255,255,255,0.3);'>
             {prob_percentage:.1f}%
         </div>
@@ -195,7 +192,7 @@ def create_risk_breakdown_chart(prob_percentage):
     categories = ['High Risk<br><55%', 'Borderline<br>55-69%', 'Approved<br>≥70%']
     values = [55, 15, 30]
     # Darker, transparent colors for the background
-    colors = [f"rgba(255, 65, 108, 0.2)", f"rgba(247, 151, 30, 0.2)", f"rgba(0, 242, 96, 0.2)"]
+    colors = ['rgba(255, 65, 108, 0.2)', 'rgba(247, 151, 30, 0.2)', 'rgba(0, 242, 96, 0.2)']
     
     fig = go.Figure()
     
@@ -260,7 +257,7 @@ def create_simple_risk_bar(prob_percentage):
         zone_color = COLOR_NEON_GREEN
     
     return f"""
-    <div style='background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>
+    <div style='background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>
         <div style='font-weight: 600; margin-bottom: 1rem; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3);'>Risk Assessment Scale</div>
         <div style='display: flex; height: 40px; border-radius: 8px; overflow: hidden; margin-bottom: 1rem;'>
             <div style='flex: 55; background: rgba(255, 65, 108, 0.3); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #ffcccb; border-right: 1px solid rgba(0,0,0,0.2);'>
@@ -334,7 +331,7 @@ def create_feature_importance_chart(input_data):
     return fig
 
 def create_simple_factors(input_data):
-    """HTML fallback for key factors - matching the neon glass theme"""
+    """Simple factor display"""
     factors = {
         'Credit Score': min(input_data['Credit_Score'] / 850 * 100, 100),
         'Income': min((input_data['Applicant_Income'] + input_data['Coapplicant_Income']) / 200 * 100, 100) if input_data['Applicant_Income'] > 0 else 0,
@@ -343,7 +340,7 @@ def create_simple_factors(input_data):
         'Collateral': min(input_data['Collateral_Value'] / 1000 * 100, 100) if input_data['Collateral_Value'] > 0 else 0,
     }
     
-    html = "<div style='background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>"
+    html = "<div style='background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);'>"
     html += "<div style='font-weight: 600; margin-bottom: 1rem; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3);'>Key Factors Analysis</div>"
     
     for factor, score in sorted(factors.items(), key=lambda x: x[1], reverse=True):
@@ -381,26 +378,26 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Glassmorphism CSS
-    st.markdown(f"""
+    # Custom CSS for glass-like aesthetic and footer
+    st.markdown("""
         <style>
         /* Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         /* Global Background - Deep Space Gradient */
-        .stApp {{
-            background: linear-gradient(135deg, {COLOR_BG_DARK} 0%, {COLOR_BG_MID} 50%, {COLOR_BG_LIGHT} 100%);
+        .stApp {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             background-attachment: fixed;
-        }}
+        }
         
         /* Text Colors */
-        h1, h2, h3, h4, h5, h6, p, span, div, label {{
+        h1, h2, h3, h4, h5, h6, p, span, div, label {
             font-family: 'Inter', sans-serif;
             color: rgba(255, 255, 255, 0.95) !important;
-        }}
+        }
         
         /* Glass Card Class */
-        .glass-card {{
+        .glass-card {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -410,15 +407,15 @@ def main():
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             height: 100%;
-        }}
+        }
         
-        .glass-card:hover {{
+        .glass-card:hover {
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }}
+        }
 
         /* Section Title */
-        .section-title {{
+        .section-title {
             color: rgba(255, 255, 255, 0.6);
             font-size: 0.75rem;
             font-weight: 700;
@@ -427,10 +424,10 @@ def main():
             margin-bottom: 1.25rem;
             padding-bottom: 0.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }}
+        }
         
         /* Main Headers */
-        h1 {{
+        h1 {
             font-size: 2.5rem;
             font-weight: 800;
             background: -webkit-linear-gradient(45deg, #fff, #a5b4fc);
@@ -438,108 +435,108 @@ def main():
             -webkit-text-fill-color: transparent;
             margin-bottom: 0;
             text-shadow: 0 0 30px rgba(165, 180, 252, 0.3);
-        }}
+        }
         
-        .subtitle {{
+        .subtitle {
             color: rgba(255, 255, 255, 0.6);
             font-size: 1rem;
             margin-bottom: 2rem;
             font-weight: 300;
-        }}
+        }
 
         /* Inputs - Dark Glass */
         .stNumberInput > div > div > input,
         .stSelectbox > div > div > div,
-        textarea {{
+        textarea {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-        }}
+        }
         
         .stNumberInput > div > div > input:focus,
-        .stSelectbox > div > div > div:focus {{
+        .stSelectbox > div > div > div:focus {
             border-color: #a5b4fc;
             box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.1);
-        }}
+        }
 
         /* Inputs Labels */
-        label {{
+        label {
             font-weight: 500;
             color: rgba(255, 255, 255, 0.8) !important;
-        }}
+        }
 
         /* Primary Button */
-        .stButton > button[kind="primary"] {{
+        .stButton > button[kind="primary"] {
             width: 100%;
             height: 3.5rem;
             font-size: 1rem;
             font-weight: 700;
             border-radius: 16px;
             border: none;
-            background: linear-gradient(90deg, {COLOR_NEON_GREEN} 0%, #0575E6 100%);
+            background: linear-gradient(90deg, #00f260 0%, #0575E6 100%);
             color: #000;
-            box-shadow: 0 0 20px {COLOR_NEON_GREEN}40;
+            box-shadow: 0 0 20px rgba(0, 242, 96, 0.4);
             transition: all 0.3s ease;
-        }}
+        }
         
-        .stButton > button[kind="primary"]:hover {{
+        .stButton > button[kind="primary"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 30px {COLOR_NEON_GREEN}60;
-        }}
+            box-shadow: 0 0 30px rgba(0, 242, 96, 0.6);
+        }
         
         /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {{
+        .stTabs [data-baseweb="tab-list"] {
             gap: 1rem;
             background: rgba(255, 255, 255, 0.05);
             padding: 0.5rem;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-        }}
+        }
         
-        .stTabs [data-baseweb="tab"] {{
+        .stTabs [data-baseweb="tab"] {
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.6);
-        }}
+        }
         
-        .stTabs [aria-selected="true"] {{
+        .stTabs [aria-selected="true"] {
             background: rgba(255, 255, 255, 0.15);
             color: white;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-        }}
+        }
 
         /* Metrics */
-        div[data-testid="stMetricValue"] {{
+        div[data-testid="stMetricValue"] {
             font-size: 2rem;
             font-weight: 700;
             color: white;
-        }}
+        }
         
-        div[data-testid="stMetricLabel"] {{
+        div[data-testid="stMetricLabel"] {
             font-size: 0.85rem;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-        }}
+        }
 
         /* Result Cards */
-        .result-success {{
+        .result-success {
             background: rgba(0, 242, 96, 0.1);
-            border: 2px solid {COLOR_NEON_GREEN};
-            box-shadow: 0 0 40px {COLOR_NEON_GREEN}33;
-        }}
+            border: 2px solid #00f260;
+            box-shadow: 0 0 40px rgba(0, 242, 96, 0.2);
+        }
         
-        .result-danger {{
+        .result-danger {
             background: rgba(255, 65, 108, 0.1);
-            border: 2px solid {COLOR_NEON_RED};
-            box-shadow: 0 0 40px {COLOR_NEON_RED}33;
-        }}
+            border: 2px solid #ff416c;
+            box-shadow: 0 0 40px rgba(255, 65, 108, 0.2);
+        }
         
-        /* Signature Label */
-        .chef-label {{
+        /* Signature Label (Footer) */
+        .chef-label {
             text-align: center;
             margin-top: 3rem;
             padding: 1rem;
@@ -548,15 +545,15 @@ def main():
             font-size: 0.9rem;
             letter-spacing: 2px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }}
-        .chef-label span {{
+        }
+        .chef-label span {
             background: linear-gradient(90deg, #FFD700, #fdb931);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
             font-size: 1.1rem;
             text-transform: uppercase;
-        }}
+        }
 
         </style>
     """, unsafe_allow_html=True)
@@ -658,14 +655,14 @@ def main():
                     if prob_percentage >= 70:
                         st.markdown(f"""
                             <div class='glass-card result-success' style='text-align: center;'>
-                                <h2 style='color: {COLOR_NEON_GREEN}; margin: 0; font-size: 2.5rem; font-weight: 800; text-shadow: 0 0 20px {COLOR_NEON_GREEN}80;'>APPROVED</h2>
+                                <h2 style='color: #00f260; margin: 0; font-size: 2.5rem; font-weight: 800; text-shadow: 0 0 20px rgba(0, 242, 96, 0.5);'>APPROVED</h2>
                                 <p style='color: rgba(255,255,255,0.8); font-size: 1.1rem; margin-top: 0.5rem;'>Application meets risk criteria</p>
                             </div>
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
                             <div class='glass-card result-danger' style='text-align: center;'>
-                                <h2 style='color: {COLOR_NEON_RED}; margin: 0; font-size: 2.5rem; font-weight: 800; text-shadow: 0 0 20px {COLOR_NEON_RED}80;'>REJECTED</h2>
+                                <h2 style='color: #ff416c; margin: 0; font-size: 2.5rem; font-weight: 800; text-shadow: 0 0 20px rgba(255, 65, 108, 0.5);'>REJECTED</h2>
                                 <p style='color: rgba(255,255,255,0.8); font-size: 1.1rem; margin-top: 0.5rem;'>Below threshold requirements</p>
                             </div>
                         """, unsafe_allow_html=True)
@@ -776,7 +773,7 @@ def main():
         """)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # The Specific Label Request
+    # Footer label 'cooked by chef sachin'
     st.markdown("""
         <div class='chef-label'>
             COOKED BY <span>CHEF SACHIN</span>
