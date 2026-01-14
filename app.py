@@ -161,7 +161,7 @@ def main():
             margin: 2rem 0;
         }
         .info-box {
-            background: #f0f2f6;
+            background: #6c87bd;
             padding: 1rem;
             border-radius: 10px;
             border-left: 4px solid #667eea;
@@ -429,3 +429,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
