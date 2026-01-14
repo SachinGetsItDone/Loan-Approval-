@@ -66,9 +66,14 @@ if submit:
     })
 
     # Numerical scaling
-    num_cols = list(scaler.feature_names_in_)
-    scaled_num = scaler.transform(input_df[num_cols])
-    scaled_df = pd.DataFrame(scaled_num, columns=num_cols)
+# Numerical scaling (SAFE ALIGNMENT)
+num_cols = list(scaler.feature_names_in_)
+
+# Ensure all expected numerical columns exist
+input_df_num = input_df.reindex(columns=num_cols, fill_value=0)
+
+scaled_num = scaler.transform(input_df_num)
+scaled_df = pd.DataFrame(scaled_num, columns=num_cols)
 
     # Categorical encoding
     cat_cols = encoder.feature_names_in_
@@ -91,4 +96,5 @@ if submit:
         st.success(f"✅ Loan Approved (Confidence: {probability:.2%})")
     else:
         st.error(f"❌ Loan Rejected (Confidence: {1 - probability:.2%})")
+
 
