@@ -1,54 +1,97 @@
 import streamlit as st
 import pickle
-import numpy as np
 import pandas as pd
 
+# ---------------- LOAD MODELS ----------------
 model = pickle.load(open("model.pkl", "rb"))
 scaler = pickle.load(open("scaler.pkl", "rb"))
 encoder = pickle.load(open("encoder.pkl", "rb"))
+features = pickle.load(open("features.pkl", "rb"))  # IMPORTANT
 
-st.title("🏦 Loan Approval Prediction App")
-st.write("Enter applicant details to predict loan approval status")
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(
+    page_title="Loan Approval Prediction",
+    page_icon="🏦",
+    layout="centered"
+)
 
-age = st.number_input("Age", min_value=18, max_value=100)
-income = st.number_input("Applicant Income", min_value=0)
-credit_score = st.number_input("Credit Score", min_value=300, max_value=900)
-dti = st.number_input("DTI Ratio", min_value=0.0, max_value=1.0)
-savings = st.number_input("Savings", min_value=0)
+# ---------------- TITLE ----------------
+st.title("🏦 Loan Approval Prediction")
+st.markdown("Predict whether a loan will be **approved or rejected** using ML.")
 
-gender = st.selectbox("Gender", ["Male", "Female"])
-marital_status = st.selectbox("Marital Status", ["Single", "Married"])
-employment_status = st.selectbox("Employment Status", ["Employed", "Unemployed", "Self-employed"])
-property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
+st.divider()
 
-input_data = pd.DataFrame({
-    "Age": [age],
-    "Applicant_Income": [income],
-    "Credit_Score": [credit_score],
-    "DTI_Ratio": [dti],
-    "Savings": [savings],
-    "Gender": [gender],
-    "Marital_Status": [marital_status],
-    "Employment_Status": [employment_status],
-    "Property_Area": [property_area]
-})
+# ---------------- INPUT FORM ----------------
+with st.form("loan_form"):
+    st.subheader("Applicant Details")
 
-input_data = pd.DataFrame({
-    "Age": [age],
-    "Applicant_Income": [income],
-    "Credit_Score": [credit_score],
-    "DTI_Ratio": [dti],
-    "Savings": [savings],
-    "Gender": [gender],
-    "Marital_Status": [marital_status],
-    "Employment_Status": [employment_status],
-    "Property_Area": [property_area]
-})
+    col1, col2 = st.columns(2)
 
-if st.button("Predict Loan Approval"):
+    with col1:
+        age = st.number_input("Age", 18, 100, 30)
+        income = st.number_input("Applicant Income", min_value=0, value=60000)
+        savings = st.number_input("Savings", min_value=0, value=200000)
+
+    with col2:
+        credit_score = st.number_input("Credit Score", 300, 900, 750)
+        dti = st.slider("DTI Ratio", 0.0, 1.0, 0.25)
+
+    st.subheader("Personal Information")
+
+    gender = st.selectbox("Gender", ["Male", "Female"])
+    marital_status = st.selectbox("Marital Status", ["Single", "Married"])
+    employment_status = st.selectbox(
+        "Employment Status",
+        ["Employed", "Self-employed", "Unemployed"]
+    )
+    property_area = st.selectbox(
+        "Property Area",
+        ["Urban", "Semiurban", "Rural"]
+    )
+
+    submit = st.form_submit_button("🔍 Predict Loan Approval")
+
+# ---------------- PREDICTION ----------------
+if submit:
+    # Raw input
+    input_df = pd.DataFrame({
+        "Age": [age],
+        "Applicant_Income": [income],
+        "Credit_Score": [credit_score],
+        "DTI_Ratio": [dti],
+        "Savings": [savings],
+        "Gender": [gender],
+        "Marital_Status": [marital_status],
+        "Employment_Status": [employment_status],
+        "Property_Area": [property_area]
+    })
+
+    # Numerical scaling
+    num_cols = ["Age", "Applicant_Income", "Credit_Score", "DTI_Ratio", "Savings"]
+    scaled_num = scaler.transform(input_df[num_cols])
+    scaled_df = pd.DataFrame(scaled_num, columns=num_cols)
+
+    # Categorical encoding
+    cat_cols = encoder.feature_names_in_
+    encoded_cat = encoder.transform(input_df[cat_cols])
+    encoded_df = pd.DataFrame(
+        encoded_cat,
+        columns=encoder.get_feature_names_out(cat_cols)
+    )
+
+    # Final input
+    final_input = pd.concat([scaled_df, encoded_df], axis=1)
+
+    # 🔑 MATCH TRAINING FEATURES
+    final_input = final_input.reindex(columns=features, fill_value=0)
+
+    # Prediction
     prediction = model.predict(final_input)[0]
+    probability = model.predict_proba(final_input)[0][1]
+
+    st.divider()
 
     if prediction == 1:
-        st.success("✅ Loan Approved")
+        st.success(f"✅ Loan Approved (Confidence: {probability:.2%})")
     else:
-        st.error("❌ Loan Rejected")
+        st.error(f"❌ Loan Rejected (Confidence: {1 - probability:.2%})")
